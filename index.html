@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>frA-GRA</title>
+  <meta name="description" content="Open Mission Systems ecosystem for Rust — CAL implementation, ArduPilot gateway, and OpenC3/COSMOS integration.">
+  <style>
+    :root {
+      --bg:       #0d1117;
+      --surface:  #161b22;
+      --border:   #30363d;
+      --text:     #c9d1d9;
+      --muted:    #8b949e;
+      --accent:   #e36d00;
+      --accent2:  #f0883e;
+      --link:     #58a6ff;
+      --code-bg:  #1f2937;
+      --radius:   8px;
+      --gutter:   16px;
+      --max-w:    960px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      scroll-snap-type: y mandatory;
+      overflow-y: scroll;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    a { color: var(--link); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--gutter);
+      height: 56px;
+      background: rgba(13,17,23,0.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-brand {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+    .nav-brand span { color: var(--accent); }
+
+    .nav-links {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+    }
+    .nav-links a { color: var(--muted); font-size: 0.9rem; }
+    .nav-links a:hover { color: var(--text); text-decoration: none; }
+
+    /* ── Scroll sections ── */
+    section {
+      scroll-snap-align: start;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 80px var(--gutter) 40px;
+    }
+
+    .inner {
+      width: 100%;
+      max-width: var(--max-w);
+    }
+
+    /* ── Hero ── */
+    #hero {
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(227,109,0,0.12) 0%, transparent 70%),
+                  var(--bg);
+      text-align: center;
+      position: relative;
+    }
+
+    .hero-logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 80px; height: 80px;
+      border-radius: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    #hero h1 {
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+    #hero h1 .accent { color: var(--accent); }
+
+    #hero p {
+      font-size: clamp(1rem, 2.5vw, 1.2rem);
+      color: var(--muted);
+      max-width: 560px;
+      margin: 0 auto 32px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--accent2); text-decoration: none; }
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--accent); text-decoration: none; }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--muted);
+      font-size: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      animation: bounce 2s infinite;
+    }
+    @keyframes bounce {
+      0%,100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(6px); }
+    }
+
+    /* ── Section headings ── */
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+    .section-title {
+      font-size: clamp(1.5rem, 4vw, 2.2rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+    }
+    .section-desc {
+      color: var(--muted);
+      max-width: 640px;
+      margin-bottom: 40px;
+    }
+
+    /* ── What is OMS ── */
+    #oms { background: var(--bg); }
+
+    .oms-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    @media (min-width: 640px) {
+      .oms-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .oms-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+    .oms-card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .oms-card p { color: var(--muted); font-size: 0.9rem; }
+
+    /* ── Projects ── */
+    #projects { background: var(--surface); }
+
+    .project-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    @media (min-width: 640px) {
+      .project-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    .project-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .project-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .project-logo {
+      width: 56px; height: 56px;
+      border-radius: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .project-logo svg { width: 32px; height: 32px; }
+
+    .project-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: "SFMono-Regular", Consolas, monospace;
+    }
+    .project-card p {
+      color: var(--muted);
+      font-size: 0.875rem;
+      flex: 1;
+    }
+    .project-link {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .project-link:hover { color: var(--accent2); text-decoration: none; }
+
+    /* ── Docker ── */
+    #docker { background: var(--bg); }
+
+    .docker-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 40px;
+      align-items: start;
+    }
+    @media (min-width: 768px) {
+      .docker-layout { grid-template-columns: 1fr 1fr; }
+    }
+
+    .flow-diagram {
+      display: flex;
+      flex-direction: column;
+    }
+    .flow-node {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+    .flow-node .flow-sub { font-weight: 400; color: var(--muted); font-size: 0.8rem; }
+    .flow-arrow {
+      width: 2px;
+      height: 24px;
+      background: var(--border);
+      margin-left: 24px;
+      position: relative;
+    }
+    .flow-arrow::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: -4px;
+      border: 5px solid transparent;
+      border-top-color: var(--border);
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      overflow-x: auto;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      color: #e6edf3;
+    }
+    code { font-family: "SFMono-Regular", Consolas, monospace; }
+
+    /* ── Specs & Tools ── */
+    #tools { background: var(--surface); }
+
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+    @media (min-width: 540px) {
+      .tools-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .tool-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      text-align: center;
+      transition: border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--accent); text-decoration: none; }
+    .tool-card svg { width: 48px; height: 48px; }
+    .tool-card span {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    /* ── Footer ── */
+    footer {
+      scroll-snap-align: none;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      padding: 32px var(--gutter);
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    footer a { color: var(--muted); }
+    footer a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-brand">fr<span class="accent">A-GRA</span></span>
+  <ul class="nav-links">
+    <li><a href="#projects">Projects</a></li>
+    <li><a href="#docker">Docker</a></li>
+    <li><a href="#tools">Specs</a></li>
+    <li><a href="https://github.com/frA-GRA" target="_blank" rel="noopener">GitHub</a></li>
+  </ul>
+</nav>
+
+<!-- ── 1. Hero ── -->
+<section id="hero">
+  <div class="inner">
+    <div class="hero-logo">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" width="48" height="48">
+        <rect width="48" height="48" rx="10" fill="#1f2937"/>
+        <text x="24" y="32" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold" fill="#e36d00">GRA</text>
+      </svg>
+    </div>
+    <h1>Open Mission Systems<br>in <span class="accent">Rust</span></h1>
+    <p>A CAL implementation, MAVLink gateway, and telemetry bridge — built on the OMS standard for mission-critical avionics software.</p>
+    <div class="btn-row">
+      <a class="btn btn-primary" href="https://github.com/frA-GRA" target="_blank" rel="noopener">
+        <svg height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.09.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.604-3.369-1.342-3.369-1.342-.454-1.154-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.004.07 1.532 1.032 1.532 1.032.892 1.528 2.341 1.087 2.912.832.091-.647.35-1.087.636-1.337-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.03-2.682-.103-.254-.447-1.27.097-2.646 0 0 .84-.268 2.75 1.026A9.578 9.578 0 0 1 12 6.836c.85.004 1.705.115 2.504.337 1.909-1.294 2.748-1.026 2.748-1.026.545 1.376.202 2.392.1 2.646.64.698 1.026 1.59 1.026 2.682 0 3.841-2.337 4.687-4.565 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+        GitHub
+      </a>
+      <a class="btn btn-secondary" href="https://github.com/frA-GRA/frA-GRA/tree/main/specs">
+        Specifications
+      </a>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    scroll
+  </div>
+</section>
+
+<!-- ── 2. What is OMS ── -->
+<section id="oms">
+  <div class="inner">
+    <p class="section-label">Background</p>
+    <h2 class="section-title">What is OMS?</h2>
+    <p class="section-desc">Open Mission Systems (OMS) is an open standard for mission-critical avionics middleware. Its Critical Abstraction Layer (CAL) decouples software components through a typed, publish/subscribe message bus — enabling safe, composable architectures for unmanned and manned vehicles.</p>
+    <div class="oms-grid">
+      <div class="oms-card">
+        <h3>Critical Abstraction Layer (CAL)</h3>
+        <p>Defines the interface between flight software components and the Abstract Service Bus. Messages are generated from UCI XML schemas; the CAL handles serialization, QoS, topic lifecycle, and UUID identity. This org implements CAL per OMSC-SPC-001 Rev L in Rust.</p>
+      </div>
+      <div class="oms-card">
+        <h3>Abstract Service Bus (ASB)</h3>
+        <p>The underlying publish/subscribe transport (e.g. DDS, UDP). The CAL abstracts ASB details so components are bus-agnostic. Applications write to topics; the CAL and ASB handle delivery to any subscriber on the same bus.</p>
+      </div>
+      <div class="oms-card">
+        <h3>UCI Schema Types</h3>
+        <p>Unified Communications Interface (UCI) defines all message schemas as XML Schema (XSD). Types cover entities, ownship, sensors, commands, and status. The CAL generates typed Rust structs from these schemas at build time.</p>
+      </div>
+      <div class="oms-card">
+        <h3>Service Identifiers &amp; UUIDs</h3>
+        <p>Every OMS service is identified by a UUID v1/v3/v4 (RFC 4122). The CAL binds one instance per (Service ID, ASB ID) pair, ensuring exactly one active writer per topic within a service boundary.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 3. Projects ── -->
+<section id="projects">
+  <div class="inner">
+    <p class="section-label">Repositories</p>
+    <h2 class="section-title">Projects</h2>
+    <p class="section-desc">Three repositories, each a self-contained piece of the OMS ecosystem.</p>
+    <div class="project-grid">
+
+      <div class="project-card">
+        <div class="project-logo">
+          <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#1f2937"/>
+            <text x="16" y="21" text-anchor="middle" font-family="monospace" font-size="9" font-weight="bold" fill="#e36d00">rcal</text>
+          </svg>
+        </div>
+        <h3>rcal</h3>
+        <p>OMS Critical Abstraction Layer implemented in Rust. Satisfies all 55 CERT CAL requirements from OMSC-SPC-001 Rev L. Provides typed UCI message generation, topic lifecycle management, QoS, and UUID identity.</p>
+        <a class="project-link" href="https://github.com/frA-GRA/rcal" target="_blank" rel="noopener">
+          View on GitHub
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+      </div>
+
+      <div class="project-card">
+        <div class="project-logo">
+          <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#1f2937"/>
+            <text x="16" y="14" text-anchor="middle" font-family="monospace" font-size="6.5" font-weight="bold" fill="#58a6ff">rcal</text>
+            <text x="16" y="23" text-anchor="middle" font-family="monospace" font-size="5.5" font-weight="bold" fill="#8b949e">ardupilot</text>
+          </svg>
+        </div>
+        <h3>rcal-ardupilot</h3>
+        <p>MAVLink-to-UCI gateway for ArduPilot SITL. Receives MAVLink telemetry from a simulated (or real) ArduPilot vehicle and publishes it as OMS UCI messages on the CAL bus.</p>
+        <a class="project-link" href="https://github.com/frA-GRA/rcal-ardupilot" target="_blank" rel="noopener">
+          View on GitHub
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+      </div>
+
+      <div class="project-card">
+        <div class="project-logo">
+          <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#1f2937"/>
+            <text x="16" y="14" text-anchor="middle" font-family="monospace" font-size="6" font-weight="bold" fill="#3fb950">cosmos</text>
+            <text x="16" y="23" text-anchor="middle" font-family="monospace" font-size="6.5" font-weight="bold" fill="#8b949e">-oms</text>
+          </svg>
+        </div>
+        <h3>cosmos-oms</h3>
+        <p>OpenC3/COSMOS plugin that translates OMS UCI messages into COSMOS telemetry and commands. Enables ground station operators to monitor OMS-based vehicles through the COSMOS interface.</p>
+        <a class="project-link" href="https://github.com/frA-GRA/cosmos-oms" target="_blank" rel="noopener">
+          View on GitHub
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── 4. Docker ── -->
+<section id="docker">
+  <div class="inner">
+    <p class="section-label">Getting Started</p>
+    <h2 class="section-title">Running an Example System</h2>
+    <p class="section-desc">The hub repo includes a Docker Compose file that wires ArduPilot SITL, the rcal-ardupilot gateway, and cosmos-oms into a complete system.</p>
+    <div class="docker-layout">
+      <div>
+        <p style="color:var(--muted);font-size:.875rem;margin-bottom:16px;">Clone the hub and run:</p>
+        <pre><code>git clone --recurse-submodules \
+  https://github.com/frA-GRA/frA-GRA
+
+cd frA-GRA
+docker compose \
+  -f docker/docker-compose.yml up</code></pre>
+        <p style="color:var(--muted);font-size:.8rem;margin-top:12px;">Requires Docker 24+ with Compose V2. Container images are placeholders — see individual repos for build instructions.</p>
+      </div>
+      <div>
+        <p style="color:var(--muted);font-size:.875rem;margin-bottom:16px;">Data flow:</p>
+        <div class="flow-diagram">
+          <div class="flow-node">
+            ArduPilot SITL
+            <div class="flow-sub">Simulated copter vehicle</div>
+          </div>
+          <div class="flow-arrow"></div>
+          <div class="flow-node">
+            rcal-ardupilot
+            <div class="flow-sub">MAVLink → UCI translation</div>
+          </div>
+          <div class="flow-arrow"></div>
+          <div class="flow-node">
+            OMS Bus (ASB)
+            <div class="flow-sub">UCI typed messages</div>
+          </div>
+          <div class="flow-arrow"></div>
+          <div class="flow-node">
+            cosmos-oms
+            <div class="flow-sub">OMS → COSMOS telemetry</div>
+          </div>
+          <div class="flow-arrow"></div>
+          <div class="flow-node">
+            OpenC3/COSMOS
+            <div class="flow-sub">Ground station UI</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 5. Specs & Tools ── -->
+<section id="tools">
+  <div class="inner">
+    <p class="section-label">Ecosystem</p>
+    <h2 class="section-title">Specifications &amp; Tools</h2>
+    <p class="section-desc">frA-GRA implements open standards and integrates with established open-source tools.</p>
+    <div class="tools-grid">
+
+      <a class="tool-card" href="https://www.openmissionsystems.org/" target="_blank" rel="noopener">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="24" cy="24" r="22" stroke="#30363d" stroke-width="2" fill="#1f2937"/>
+          <polygon points="24,8 28,20 40,20 30,28 34,40 24,32 14,40 18,28 8,20 20,20" fill="none" stroke="#e36d00" stroke-width="1.5" stroke-linejoin="round"/>
+          <text x="24" y="27" text-anchor="middle" font-family="monospace" font-size="7" font-weight="bold" fill="#e36d00">OMS</text>
+        </svg>
+        <span>Open Mission<br>Systems</span>
+      </a>
+
+      <a class="tool-card" href="https://www.rust-lang.org/" target="_blank" rel="noopener">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="24" cy="24" r="22" fill="#1f2937" stroke="#30363d" stroke-width="2"/>
+          <g stroke="#e36d00" stroke-width="2.2" stroke-linecap="round">
+            <line x1="24" y1="3"  x2="24" y2="8"/>
+            <line x1="24" y1="40" x2="24" y2="45"/>
+            <line x1="3"  y1="24" x2="8"  y2="24"/>
+            <line x1="40" y1="24" x2="45" y2="24"/>
+            <line x1="7.6"  y1="7.6"  x2="11.2" y2="11.2"/>
+            <line x1="36.8" y1="36.8" x2="40.4" y2="40.4"/>
+            <line x1="40.4" y1="7.6"  x2="36.8" y2="11.2"/>
+            <line x1="11.2" y1="36.8" x2="7.6"  y2="40.4"/>
+          </g>
+          <circle cx="24" cy="24" r="13" stroke="#e36d00" stroke-width="2" fill="none"/>
+          <circle cx="24" cy="24" r="6"  stroke="#e36d00" stroke-width="2" fill="none"/>
+          <text x="24" y="28" text-anchor="middle" font-family="serif" font-size="11" font-weight="900" fill="#e36d00">R</text>
+        </svg>
+        <span>Rust</span>
+      </a>
+
+      <a class="tool-card" href="https://ardupilot.org/" target="_blank" rel="noopener">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="24" cy="24" r="22" fill="#1f2937" stroke="#30363d" stroke-width="2"/>
+          <line x1="8"  y1="24" x2="40" y2="24" stroke="#00b4d8" stroke-width="3" stroke-linecap="round"/>
+          <line x1="24" y1="8"  x2="24" y2="40" stroke="#00b4d8" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="8"  cy="24" r="4" fill="#00b4d8" opacity=".7"/>
+          <circle cx="40" cy="24" r="4" fill="#00b4d8" opacity=".7"/>
+          <circle cx="24" cy="8"  r="4" fill="#00b4d8" opacity=".7"/>
+          <circle cx="24" cy="40" r="4" fill="#00b4d8" opacity=".7"/>
+          <circle cx="24" cy="24" r="5" fill="#00b4d8"/>
+        </svg>
+        <span>ArduPilot</span>
+      </a>
+
+      <a class="tool-card" href="https://openc3.com/" target="_blank" rel="noopener">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="24" cy="24" r="22" fill="#1f2937" stroke="#30363d" stroke-width="2"/>
+          <ellipse cx="24" cy="24" rx="16" ry="7" stroke="#3fb950" stroke-width="2" fill="none" transform="rotate(-35 24 24)"/>
+          <ellipse cx="24" cy="24" rx="16" ry="7" stroke="#3fb950" stroke-width="2" fill="none" transform="rotate(35 24 24)"/>
+          <circle cx="24" cy="24" r="4" fill="#3fb950"/>
+        </svg>
+        <span>OpenC3<br>COSMOS</span>
+      </a>
+
+    </div>
+    <p style="margin-top:32px;font-size:.875rem;">
+      OMS specifications are archived in the
+      <a href="https://github.com/frA-GRA/frA-GRA/tree/main/specs">specs directory</a>
+      of the hub repo.
+    </p>
+  </div>
+</section>
+
+<footer>
+  <p>
+    <a href="https://github.com/frA-GRA" target="_blank" rel="noopener">github.com/frA-GRA</a>
+    &nbsp;·&nbsp;
+    Open Mission Systems implementations and tooling
+  </p>
+</footer>
+
+</body>
+</html>

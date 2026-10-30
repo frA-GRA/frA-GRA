@@ -1,0 +1,16 @@
+[submodule "rcal"]
+	path = rcal
+	url = https://github.com/frA-GRA/rcal.git
+	branch = main
+[submodule "rcal-ardupilot"]
+	path = rcal-ardupilot
+	url = https://github.com/frA-GRA/rcal-ardupilot.git
+	branch = main
+[submodule "cosmos-oms"]
+	path = cosmos-oms
+	url = https://github.com/frA-GRA/cosmos-oms.git
+	branch = main
+[submodule "specs/a-gra"]
+	path = specs/a-gra
+	url = https://github.com/open-arsenal/a-gra.git
+	branch = main

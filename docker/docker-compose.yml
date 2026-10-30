@@ -1,0 +1,53 @@
+# frA-GRA Example System
+#
+# Data flow:
+#   ArduPilot SITL → (MAVLink UDP) → rcal-ardupilot → (UCI/DDS) → rcal bus
+#                                                                      ↓
+#                                                               cosmos-oms
+#                                                                      ↓
+#                                                          OpenC3/COSMOS telemetry
+#
+# Prerequisites: Docker 24+ with Compose V2
+# Usage: docker compose up
+
+services:
+
+  # ArduPilot Software-In-The-Loop simulator
+  # Simulates a copter vehicle, outputs MAVLink on UDP 14550
+  ardupilot-sitl:
+    image: ardupilot/ardupilot-sitl:latest  # placeholder — check https://hub.docker.com/r/ardupilot/ardupilot-sitl
+    command: ["--vehicle", "ArduCopter", "--out", "udp:rcal-ardupilot:14550"]
+    networks:
+      - oms
+
+  # MAVLink-to-UCI gateway
+  # Receives MAVLink from ArduPilot SITL and publishes UCI messages on the OMS bus
+  rcal-ardupilot:
+    image: ghcr.io/fra-gra/rcal-ardupilot:latest  # placeholder — build from frA-GRA/rcal-ardupilot
+    environment:
+      - MAVLINK_LISTEN_PORT=14550
+      - OMS_BUS_URL=udp://oms-bus:7400
+    depends_on:
+      - ardupilot-sitl
+    networks:
+      - oms
+
+  # OpenC3/COSMOS OMS plugin
+  # Subscribes to OMS bus and exposes telemetry via the COSMOS interface
+  cosmos-oms:
+    image: ghcr.io/fra-gra/cosmos-oms:latest  # placeholder — build from frA-GRA/cosmos-oms
+    environment:
+      - OMS_BUS_URL=udp://oms-bus:7400
+      - COSMOS_HOST=cosmos
+      - COSMOS_PORT=7779
+    depends_on:
+      - rcal-ardupilot
+    networks:
+      - oms
+      - cosmos
+
+networks:
+  oms:
+    driver: bridge
+  cosmos:
+    driver: bridge
