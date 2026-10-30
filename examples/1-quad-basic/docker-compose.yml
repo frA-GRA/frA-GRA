@@ -25,8 +25,9 @@ services:
   rcal-ardupilot:
     image: ghcr.io/fra-gra/rcal-ardupilot:latest  # placeholder — build from frA-GRA/rcal-ardupilot
     environment:
-      - MAVLINK_LISTEN_PORT=14550
-      - OMS_BUS_URL=udp://oms-bus:7400
+      - RCAL_CALCONFIG_PATH=/app/CALConfig.toml
+    volumes:
+      - ./CALConfig.toml:/app/CALConfig.toml:ro
     depends_on:
       - ardupilot-sitl
     networks:
@@ -37,9 +38,11 @@ services:
   cosmos-oms:
     image: ghcr.io/fra-gra/cosmos-oms:latest  # placeholder — build from frA-GRA/cosmos-oms
     environment:
-      - OMS_BUS_URL=udp://oms-bus:7400
+      - RCAL_CALCONFIG_PATH=/app/CALConfig.toml
       - COSMOS_HOST=cosmos
       - COSMOS_PORT=7779
+    volumes:
+      - ./CALConfig.toml:/app/CALConfig.toml:ro
     depends_on:
       - rcal-ardupilot
     networks:

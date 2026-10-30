@@ -1,0 +1,57 @@
+# CALConfig for the QUAD-1 system (quad-1 network, DDS domain 1).
+# Services: rcal_sim (rcal-ardupilot-1 gateway).
+# Message schema: ../A-GRA_subset.xsd (set RCAL_XSD_PATH to it when building).
+
+[system]
+id    = "QUAD-1"
+uuid  = "73405f0d-9d4c-4dfb-b885-aa1b1b5044ef"
+default_transport = "quad_1"
+
+[system.logging]
+default_level = "info"
+
+[[system.logging.sink]]
+type   = "stdout"
+format = "pretty"
+level  = "info"
+
+[[transport]]
+id   = "quad_1"
+type = "dds"
+uri  = "1"
+
+[[service]]
+id    = "rcal_sim"
+label = "MAVLink Simulator Gateway"
+uuid  = "6cb3c904-e2dd-4a59-8406-b66b61ca5f05"
+
+[[service.topic]]
+id = "PositionReport"
+direction = "Out"
+
+[[service.topic]]
+id = "SystemStatus"
+direction = "Out"
+
+[[service.topic]]
+id = "NavigationReport"
+direction = "Out"
+
+[[service.topic]]
+id = "FlightCapabilityStatus"
+direction = "Out"
+
+[[service.topic]]
+id = "FlightActivity"
+direction = "Out"
+
+[[service.topic]]
+id = "SubsystemStatus"
+direction = "Out"
+
+[[service.topic]]
+id = "ServiceStatus"
+direction = "Out"
+
+[rcal_sim]
+sitl_address = "udpin:0.0.0.0:14550"

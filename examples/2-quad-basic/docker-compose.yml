@@ -1,0 +1,102 @@
+# frA-GRA Example System: two quadcopters and a ground control system
+#
+# Each quad has its own network and ASB (DDS domain). The quad networks are not
+# connected to each other. The GCS-1 network holds cosmos-oms and cal_bridge,
+# which joins all three networks and repeats UCI messages across the three ASBs.
+#
+# Data flow:
+#   [quad-1] ArduPilot SITL → rcal-ardupilot-1 → ASB (DDS domain 1) ─┐
+#                                                                   ├→ cal_bridge → ASB (DDS domain 0) → cosmos-oms   [gcs-1]
+#   [quad-2] ArduPilot SITL → rcal-ardupilot-2 → ASB (DDS domain 2) ─┘
+#
+# Prerequisites: Docker 24+ with Compose V2
+# Usage: docker compose up
+
+services:
+
+  # ── quad-1 ──
+
+  # ArduPilot SITL, quad 1 (MAVLink system ID 1)
+  ardupilot-sitl-1:
+    image: ardupilot/ardupilot-sitl:latest  # placeholder — check https://hub.docker.com/r/ardupilot/ardupilot-sitl
+    command: ["--vehicle", "ArduCopter", "--instance", "0", "--sysid", "1", "--out", "udp:rcal-ardupilot-1:14550"]
+    networks:
+      - quad-1
+
+  # MAVLink-to-UCI gateway for quad 1, publishes on DDS domain 1
+  rcal-ardupilot-1:
+    image: ghcr.io/fra-gra/rcal-ardupilot:latest  # placeholder — build from frA-GRA/rcal-ardupilot
+    environment:
+      - RCAL_CALCONFIG_PATH=/app/CALConfig.toml
+    volumes:
+      - ./quad-1/CALConfig.toml:/app/CALConfig.toml:ro
+    depends_on:
+      - ardupilot-sitl-1
+    networks:
+      - quad-1
+
+  # ── quad-2 ──
+
+  # ArduPilot SITL, quad 2 (MAVLink system ID 2)
+  ardupilot-sitl-2:
+    image: ardupilot/ardupilot-sitl:latest  # placeholder — check https://hub.docker.com/r/ardupilot/ardupilot-sitl
+    command: ["--vehicle", "ArduCopter", "--instance", "1", "--sysid", "2", "--out", "udp:rcal-ardupilot-2:14550"]
+    networks:
+      - quad-2
+
+  # MAVLink-to-UCI gateway for quad 2, publishes on DDS domain 2
+  rcal-ardupilot-2:
+    image: ghcr.io/fra-gra/rcal-ardupilot:latest  # placeholder — build from frA-GRA/rcal-ardupilot
+    environment:
+      - RCAL_CALCONFIG_PATH=/app/CALConfig.toml
+    volumes:
+      - ./quad-2/CALConfig.toml:/app/CALConfig.toml:ro
+    depends_on:
+      - ardupilot-sitl-2
+    networks:
+      - quad-2
+
+  # ── GCS-1 ──
+
+  # CAL bridge: repeats UCI messages across the quad-1, quad-2, and GCS-1 ASBs
+  cal-bridge:
+    image: ghcr.io/fra-gra/rcal:latest  # placeholder — build cal_bridge from frA-GRA/rcal with --features bridge
+    command: ["cal_bridge", "/app/CALConfig.toml"]
+    volumes:
+      - ./gcs-1/CALConfig.toml:/app/CALConfig.toml:ro
+    depends_on:
+      - rcal-ardupilot-1
+      - rcal-ardupilot-2
+    networks:
+      - quad-1
+      - quad-2
+      - gcs-1
+
+  # OpenC3/COSMOS OMS plugin, subscribes on DDS domain 0
+  # Sees UCI messages from both quads through cal-bridge
+  cosmos-oms:
+    image: ghcr.io/fra-gra/cosmos-oms:latest  # placeholder — build from frA-GRA/cosmos-oms
+    environment:
+      - RCAL_CALCONFIG_PATH=/app/CALConfig.toml
+      - COSMOS_HOST=cosmos
+      - COSMOS_PORT=7779
+    volumes:
+      - ./gcs-1/CALConfig.toml:/app/CALConfig.toml:ro
+    depends_on:
+      - cal-bridge
+    networks:
+      - gcs-1
+
+networks:
+  quad-1:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: mcast-br0
+  quad-2:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: mcast-br1
+  gcs-1:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: mcast-br2

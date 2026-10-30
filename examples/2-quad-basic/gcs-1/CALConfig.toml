@@ -1,0 +1,104 @@
+# CALConfig for the GCS-1 system (gcs-1 network, DDS domain 0).
+# Services: CalBridge (cal-bridge) and oms_ingest (cosmos-oms).
+# Message schema: ../A-GRA_subset.xsd (set RCAL_XSD_PATH to it when building).
+#
+# cal_bridge repeats every CalBridge topic across the three ASBs. Each ASB uses
+# its own DDS domain so the bridge, which sits on all three networks, never
+# hears its own forwarded messages on another transport.
+
+[system]
+id    = "GCS-1"
+uuid  = "5d0c3a7e-8b21-4f6a-9c3d-2e7b1f4a6c90"
+default_transport = "gcs_1"
+
+[system.logging]
+default_level = "info"
+
+[[system.logging.sink]]
+type   = "stdout"
+format = "pretty"
+level  = "info"
+
+[[transport]]
+id   = "quad_1"
+type = "dds"
+uri  = "1"
+
+[[transport]]
+id   = "quad_2"
+type = "dds"
+uri  = "2"
+
+[[transport]]
+id   = "gcs_1"
+type = "dds"
+uri  = "0"
+
+# ── cal-bridge ──
+# Topics must be Both (the default): the bridge reads and writes on every transport.
+
+[[service]]
+id    = "CalBridge"
+label = "GCS-1 CAL Bridge"
+uuid  = "e3a9b6c2-4d71-4c08-8f5e-1b2d9a7c3e64"
+
+[[service.topic]]
+id = "PositionReport"
+
+[[service.topic]]
+id = "SystemStatus"
+
+[[service.topic]]
+id = "NavigationReport"
+
+[[service.topic]]
+id = "FlightCapabilityStatus"
+
+[[service.topic]]
+id = "FlightActivity"
+
+[[service.topic]]
+id = "SubsystemStatus"
+
+[[service.topic]]
+id = "ServiceStatus"
+
+[bridge]
+service    = "CalBridge"
+transports = ["quad_1", "quad_2", "gcs_1"]
+
+# ── cosmos-oms ──
+
+[[service]]
+id        = "oms_ingest"
+label     = "COSMOS OMS Ingest"
+uuid      = "252c8f3e-b405-4164-9f0b-a7dc2c6e541b"
+transport = "gcs_1"
+
+[[service.topic]]
+id = "PositionReport"
+direction = "In"
+
+[[service.topic]]
+id = "SystemStatus"
+direction = "In"
+
+[[service.topic]]
+id = "NavigationReport"
+direction = "In"
+
+[[service.topic]]
+id = "FlightCapabilityStatus"
+direction = "In"
+
+[[service.topic]]
+id = "FlightActivity"
+direction = "In"
+
+[[service.topic]]
+id = "SubsystemStatus"
+direction = "In"
+
+[[service.topic]]
+id = "ServiceStatus"
+direction = "In"
