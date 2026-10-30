@@ -1,0 +1,94 @@
+# CALConfig for the single 1-quad-basic system.
+# Services: rcal_sim (rcal-ardupilot gateway) and oms_ingest (cosmos-oms).
+# Message schema: A-GRA_subset.xsd (set RCAL_XSD_PATH to it when building).
+
+[system]
+id    = "QUAD-1"
+uuid  = "f7f2f293-5cfa-4a37-a59f-e05b5ef2b882"
+default_transport = "oms"
+
+[system.logging]
+default_level = "info"
+
+[[system.logging.sink]]
+type   = "stdout"
+format = "pretty"
+level  = "info"
+
+[[transport]]
+id   = "oms"
+type = "dds"
+uri  = "0"
+
+# ── rcal-ardupilot ──
+
+[[service]]
+id    = "rcal_sim"
+label = "MAVLink Simulator Gateway"
+uuid  = "a8c5a45b-dfb1-4f7b-8367-8bbedfea0135"
+
+[[service.topic]]
+id = "PositionReport"
+direction = "Out"
+
+[[service.topic]]
+id = "SystemStatus"
+direction = "Out"
+
+[[service.topic]]
+id = "NavigationReport"
+direction = "Out"
+
+[[service.topic]]
+id = "FlightCapabilityStatus"
+direction = "Out"
+
+[[service.topic]]
+id = "FlightActivity"
+direction = "Out"
+
+[[service.topic]]
+id = "SubsystemStatus"
+direction = "Out"
+
+[[service.topic]]
+id = "ServiceStatus"
+direction = "Out"
+
+[rcal_sim]
+sitl_address = "udpin:0.0.0.0:14550"
+
+# ── cosmos-oms ──
+
+[[service]]
+id    = "oms_ingest"
+label = "COSMOS OMS Ingest"
+uuid  = "8e670f0e-c68c-4e27-b89c-859c0ae4a6e1"
+
+[[service.topic]]
+id = "PositionReport"
+direction = "In"
+
+[[service.topic]]
+id = "SystemStatus"
+direction = "In"
+
+[[service.topic]]
+id = "NavigationReport"
+direction = "In"
+
+[[service.topic]]
+id = "FlightCapabilityStatus"
+direction = "In"
+
+[[service.topic]]
+id = "FlightActivity"
+direction = "In"
+
+[[service.topic]]
+id = "SubsystemStatus"
+direction = "In"
+
+[[service.topic]]
+id = "ServiceStatus"
+direction = "In"

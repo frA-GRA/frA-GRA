@@ -1,10 +1,10 @@
 # Description
-frA-GRA is the hub repo for the frA-GRA Open Mission Systems (OMS) ecosystem. It holds specifications, a Docker Compose example system, the organization website (`index.html`, served by GitHub Pages at https://fra-gra.github.io/frA-GRA/), and git submodules for each component.
+frA-GRA is the hub repo for the frA-GRA Open Mission Systems (OMS) ecosystem. It holds specifications, Docker Compose example systems, the organization website (`index.html`, served by GitHub Pages at https://fra-gra.github.io/frA-GRA/), and git submodules for each component.
 
 # Layout
  - `specs/` contains the OMS CAL specs (PDF), Markdown summaries of the requirements and schema, and A-GRA notes. This is the only copy of the specs in the ecosystem.
    - `specs/a-gra/` is a submodule (open-arsenal/a-gra) with the A-GRA ASK 6.0a PDFs (`Documentation/`) and XSDs (`Schema/`).
- - `docker/docker-compose.yml` is the example system: ArduPilot SITL → rcal-ardupilot → OMS bus → cosmos-oms. The image tags are placeholders.
+ - `examples/` holds Docker Compose example systems, one per subdirectory, each with a `docker-compose.yml`, `README.md`, a `CALConfig.toml` per OMS system, and an `A-GRA_subset.xsd` made with rcal's `xsd-subset`. `examples/README.md` lists them. Image tags are placeholders.
  - `rcal/` is a submodule: the OMS CAL in Rust (`rcal`, `rcal_macros` crates).
  - `rcal-ardupilot/` is a submodule: a MAVLink-to-UCI gateway for ArduPilot SITL.
  - `cosmos-oms/` is a submodule: an OpenC3/COSMOS plugin that ingests OMS UCI.

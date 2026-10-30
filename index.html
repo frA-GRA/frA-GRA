@@ -216,7 +216,9 @@
     .oms-card p { color: var(--muted); font-size: 0.9rem; }
 
     /* ── Projects ── */
-    #projects { background: var(--surface); }
+    #agra { background: var(--surface); }
+    #agra .oms-card { background: var(--bg); }
+    #projects { background: var(--bg); }
 
     .project-grid {
       display: grid;
@@ -228,7 +230,7 @@
     }
 
     .project-card {
-      background: var(--bg);
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 24px;
@@ -245,7 +247,7 @@
     .project-logo {
       width: 56px; height: 56px;
       border-radius: 12px;
-      background: var(--surface);
+      background: var(--bg);
       border: 1px solid var(--border);
       display: flex;
       align-items: center;
@@ -274,8 +276,8 @@
     }
     .project-link:hover { color: var(--accent2); text-decoration: none; }
 
-    /* ── Docker ── */
-    #docker { background: var(--bg); }
+    /* ── Examples ── */
+    #examples { background: var(--surface); }
 
     .docker-layout {
       display: grid;
@@ -292,7 +294,7 @@
       flex-direction: column;
     }
     .flow-node {
-      background: var(--surface);
+      background: var(--bg);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 12px 16px;
@@ -328,7 +330,7 @@
     code { font-family: "SFMono-Regular", Consolas, monospace; }
 
     /* ── Specs & Tools ── */
-    #tools { background: var(--surface); }
+    #tools { background: var(--bg); }
 
     .tools-grid {
       display: grid;
@@ -340,7 +342,7 @@
     }
 
     .tool-card {
-      background: var(--bg);
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 20px 16px;
@@ -379,7 +381,8 @@
   <span class="nav-brand">fr<span class="accent">A-GRA</span></span>
   <ul class="nav-links">
     <li><a href="#projects">Projects</a></li>
-    <li><a href="#docker">Docker</a></li>
+    <li><a href="#agra">A-GRA</a></li>
+    <li><a href="#examples">Examples</a></li>
     <li><a href="#tools">Specs</a></li>
     <li><a href="https://github.com/frA-GRA" target="_blank" rel="noopener">GitHub</a></li>
   </ul>
@@ -439,7 +442,34 @@
   </div>
 </section>
 
-<!-- ── 3. Projects ── -->
+<!-- ── 3. A-GRA ── -->
+<section id="agra">
+  <div class="inner">
+    <p class="section-label">Background</p>
+    <h2 class="section-title">What is A-GRA?</h2>
+    <p class="section-desc">The Autonomy Government Reference Architecture (A-GRA) defines the interfaces between an autonomous air vehicle and the systems around it. Its messages extend the OMS UCI schema, so an OMS CAL like rcal can carry them. frA-GRA tracks A-GRA ASK 6.0a.</p>
+    <div class="oms-grid">
+      <div class="oms-card">
+        <h3>C2 Interface</h3>
+        <p>How a vehicle reports to and takes direction from command and control. Vehicles push periodic status, including <code>PositionReport</code> and <code>NavigationReport</code>, which carry position, heading, velocity, and navigation state.</p>
+      </div>
+      <div class="oms-card">
+        <h3>Peer Interface</h3>
+        <p>How vehicles in a team share data directly. Peers exchange fused and un-fused sensor tracks as <code>Entity</code> messages and keep a shared Common Operating Picture in sync.</p>
+      </div>
+      <div class="oms-card">
+        <h3>Interface Volumes</h3>
+        <p>ASK 6.0a is split into interface volumes (C2, Peer, MP, MS, MD, VI) plus an ICD and a compliance document. Each volume lists the message flows it uses and the fields each message requires.</p>
+      </div>
+      <div class="oms-card">
+        <h3>Schema</h3>
+        <p>The message definitions ship as XML Schema (<code>A-GRA_MessageDefinitions_v6_0_a.xsd</code>) alongside the security markings schema. The hub repo includes the full kit as the <a href="https://github.com/open-arsenal/a-gra" target="_blank" rel="noopener">open-arsenal/a-gra</a> submodule.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 4. Projects ── -->
 <section id="projects">
   <div class="inner">
     <p class="section-label">Repositories</p>
@@ -498,12 +528,12 @@
   </div>
 </section>
 
-<!-- ── 4. Docker ── -->
-<section id="docker">
+<!-- ── 5. Examples ── -->
+<section id="examples">
   <div class="inner">
     <p class="section-label">Getting Started</p>
     <h2 class="section-title">Running an Example System</h2>
-    <p class="section-desc">The hub repo includes a Docker Compose file that wires ArduPilot SITL, the rcal-ardupilot gateway, and cosmos-oms into a complete system.</p>
+    <p class="section-desc">The hub repo includes Docker Compose examples that wire ArduPilot SITL, the rcal-ardupilot gateway, and cosmos-oms into complete systems. See the <a href="https://github.com/frA-GRA/frA-GRA/tree/main/examples">examples directory</a> for the full list. The simplest one runs a single quadcopter:</p>
     <div class="docker-layout">
       <div>
         <p style="color:var(--muted);font-size:.875rem;margin-bottom:16px;">Clone the hub and run:</p>
@@ -512,7 +542,7 @@
 
 cd frA-GRA
 docker compose \
-  -f docker/docker-compose.yml up</code></pre>
+  -f examples/1-quad-basic/docker-compose.yml up</code></pre>
         <p style="color:var(--muted);font-size:.8rem;margin-top:12px;">Requires Docker 24+ with Compose V2. Container images are placeholders — see individual repos for build instructions.</p>
       </div>
       <div>
@@ -548,7 +578,7 @@ docker compose \
   </div>
 </section>
 
-<!-- ── 5. Specs & Tools ── -->
+<!-- ── 6. Specs & Tools ── -->
 <section id="tools">
   <div class="inner">
     <p class="section-label">Ecosystem</p>

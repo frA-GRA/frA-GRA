@@ -14,8 +14,10 @@ cd frA-GRA
 Run an example system with Docker Compose:
 
 ```bash
-docker compose -f docker/docker-compose.yml up
+docker compose -f examples/1-quad-basic/docker-compose.yml up
 ```
+
+More examples are listed in [examples/README.md](examples/README.md).
 
 ## Repository Structure
 
@@ -23,7 +25,7 @@ docker compose -f docker/docker-compose.yml up
 frA-GRA/
 ├── specs/              OMS specifications and UCI schema summaries
 │   └── a-gra/          submodule — A-GRA interface specifications
-├── docker/             Docker Compose examples
+├── examples/           Docker Compose example systems
 ├── rcal/               submodule — OMS CAL in Rust
 ├── rcal-ardupilot/     submodule — MAVLink/UCI gateway for ArduPilot SITL
 └── cosmos-oms/         submodule — OpenC3/COSMOS OMS plugin
