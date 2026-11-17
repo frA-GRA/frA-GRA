@@ -1,11 +1,11 @@
 [submodule "rcal"]
 	path = rcal
 	url = https://github.com/frA-GRA/rcal.git
-	branch = main
+	branch = feat/132-schema-version-cfgs
 [submodule "rcal-ardupilot"]
 	path = rcal-ardupilot
 	url = https://github.com/frA-GRA/rcal-ardupilot.git
-	branch = main
+	branch = feat/dockerfile
 [submodule "cosmos-oms"]
 	path = cosmos-oms
 	url = https://github.com/frA-GRA/cosmos-oms.git
