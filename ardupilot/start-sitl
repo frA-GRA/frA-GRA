@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+case "${VEHICLE}" in
+  ArduCopter|ArduPlane) ;;
+  *) echo "VEHICLE must be ArduCopter or ArduPlane" >&2; exit 64 ;;
+esac
+
+# Keep parameter files and logs outside the image. Each MAVProxy output gives one
+# GCS/tool a full bidirectional MAVLink stream.
+args=(-v "${VEHICLE}" -f "${FRAME}" -I "${INSTANCE}" --speedup "${SPEEDUP}")
+if [[ -n "${HOME}" ]]; then
+  args+=(--custom-location "${HOME}")
+else
+  args+=(-L "${LOCATION}")
+fi
+[[ -n "${PARAM_FILE}" ]] && args+=(--add-param-file "/config/${PARAM_FILE}")
+
+read -r -a outputs <<< "${MAVPROXY_OUTS}"
+for output in "${outputs[@]}"; do
+  [[ -n "${output}" ]] && args+=(--out "${output}")
+done
+
+cd /data
+exec python3 /opt/ardupilot/Tools/autotest/sim_vehicle.py "${args[@]}"
