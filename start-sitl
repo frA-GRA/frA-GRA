@@ -9,8 +9,8 @@ esac
 # Keep parameter files and logs outside the image. Each MAVProxy output gives one
 # GCS/tool a full bidirectional MAVLink stream.
 args=(-v "${VEHICLE}" -f "${FRAME}" -I "${INSTANCE}" --speedup "${SPEEDUP}")
-if [[ -n "${HOME}" ]]; then
-  args+=(--custom-location "${HOME}")
+if [[ -n "${HOME_POS}" ]]; then
+  args+=(--custom-location "${HOME_POS}")
 else
   args+=(-L "${LOCATION}")
 fi

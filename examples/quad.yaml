@@ -1,0 +1,33 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  labels:
+    app: quad1
+  name: quad1
+spec:
+  containers:
+    - tty: true
+      env:
+        - name: MAVPROXY_OUTS
+          value: udp:localhost:14550
+      image: localhost/ardupilot_sitl:latest
+      name: quad1-sitl
+    - name: quad1-rcal-ardupilot
+      image: localhost/rcal_ardupilot:latest
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  labels:
+    app: quad1
+  name: quad1
+spec:
+  containers:
+    - tty: true
+      env:
+        - name: MAVPROXY_OUTS
+          value: udp:localhost:14550
+      image: localhost/ardupilot_sitl:latest
+      name: quad1-sitl
+    - name: quad1-rcal-ardupilot
+      image: localhost/rcal_ardupilot:latest

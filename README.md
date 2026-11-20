@@ -4,11 +4,25 @@ Central hub for the frA-GRA Open Mission Systems (OMS) ecosystem. Contains speci
 
 ## Quick Start
 
-Clone with all submodules:
+Clone:
 
 ```bash
 git clone --recurse-submodules https://github.com/frA-GRA/frA-GRA
 cd frA-GRA
+```
+
+Clone submodules:
+
+```bash
+git submodule update --init --recursive --depth 1 ardupilot/ardupilot  # optional but recommended. This is a large and deep repo and a full clone takes a while
+git submodule update --init
+```
+
+Build the common containers and volumes. This can take a while to build so we only build it once instead of which each example.
+
+```bash
+cd examples
+./build_common.sh
 ```
 
 Run an example system with Docker Compose:
