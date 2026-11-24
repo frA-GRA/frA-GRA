@@ -1,5 +1,5 @@
 # CALConfig for the QUAD-2 system (quad-2 network, DDS domain 2).
-# Services: rcal_sim (rcal-ardupilot-2 gateway).
+# Services: rcal_sim (rcal-ardupilot-2 gateway), RadioBridge (rcal_radio_bridge).
 # Message schema: ../A-GRA_subset.xsd (set RCAL_XSD_PATH to it when building).
 
 [system]
@@ -55,3 +55,38 @@ direction = "Out"
 
 [rcal_sim]
 sitl_address = "udpin:0.0.0.0:14550"
+
+# ── rcal_radio_bridge ──
+# Relays this ASB to gcs-1 over a reliable UDP link so gcs-1 and quad-1 see
+# this quad's messages. Topics are Both (the default): the bridge reads and
+# writes on its local transport.
+
+[[service]]
+id    = "RadioBridge"
+label = "QUAD-2 Radio Bridge"
+uuid  = "09853acc-44bb-4010-8d65-339f9b25d81f"
+
+[[service.topic]]
+id = "PositionReport"
+
+[[service.topic]]
+id = "SystemStatus"
+
+[[service.topic]]
+id = "NavigationReport"
+
+[[service.topic]]
+id = "FlightCapabilityStatus"
+
+[[service.topic]]
+id = "FlightActivity"
+
+[[service.topic]]
+id = "SubsystemStatus"
+
+[[service.topic]]
+id = "ServiceStatus"
+
+[radio_bridge]
+bind  = "0.0.0.0:7777"
+peers = ["gcs1:7777"]

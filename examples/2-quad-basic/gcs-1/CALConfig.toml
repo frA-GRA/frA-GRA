@@ -1,10 +1,13 @@
 # CALConfig for the GCS-1 system (gcs-1 network, DDS domain 0).
-# Services: CalBridge (cal-bridge) and oms_ingest (cosmos-oms).
+# Services: RadioBridge (radio-bridge-gcs1) and oms_ingest (cosmos-oms).
 # Message schema: ../A-GRA_subset.xsd (set RCAL_XSD_PATH to it when building).
 #
-# cal_bridge repeats every CalBridge topic across the three ASBs. Each ASB uses
-# its own DDS domain so the bridge, which sits on all three networks, never
-# hears its own forwarded messages on another transport.
+# RadioBridge only touches the local gcs_1 transport (DDS domain 0); it
+# reaches the quads over a reliable UDP link via the [radio_bridge] section
+# below instead of joining their DDS domains directly. It listens
+# (peers = []) and the quads' own RadioBridge instances dial in, so gcs-1 is
+# the hub: quad-to-quad traffic relays through it too, same star topology the
+# old cal_bridge produced.
 
 [system]
 id    = "GCS-1"
@@ -20,27 +23,18 @@ format = "pretty"
 level  = "info"
 
 [[transport]]
-id   = "quad_1"
-type = "dds"
-uri  = "1"
-
-[[transport]]
-id   = "quad_2"
-type = "dds"
-uri  = "2"
-
-[[transport]]
 id   = "gcs_1"
 type = "dds"
 uri  = "0"
 
-# ── cal-bridge ──
-# Topics must be Both (the default): the bridge reads and writes on every transport.
+# ── rcal_radio_bridge ──
+# Topics are Both (the default): the bridge reads and writes on its local
+# transport. peers is empty: gcs-1 only listens, the quads dial in.
 
 [[service]]
-id    = "CalBridge"
-label = "GCS-1 CAL Bridge"
-uuid  = "e3a9b6c2-4d71-4c08-8f5e-1b2d9a7c3e64"
+id    = "RadioBridge"
+label = "GCS-1 Radio Bridge"
+uuid  = "54e0448e-064c-45a0-8096-752403a252c8"
 
 [[service.topic]]
 id = "PositionReport"
@@ -63,9 +57,9 @@ id = "SubsystemStatus"
 [[service.topic]]
 id = "ServiceStatus"
 
-[bridge]
-service    = "CalBridge"
-transports = ["quad_1", "quad_2", "gcs_1"]
+[radio_bridge]
+bind  = "0.0.0.0:7777"
+peers = []
 
 # ── cosmos-oms ──
 

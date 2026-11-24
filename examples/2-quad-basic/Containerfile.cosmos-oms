@@ -1,0 +1,40 @@
+# Builds an openc3-operator image with the OMS bridge plugin baked in, using
+# this example's A-GRA_subset.xsd and gcs-1/CALConfig.toml to generate the
+# matching COSMOS telemetry definitions. Mirrors the cosmos-oms service
+# build in docker-compose.yml. Build with examples/2-quad-basic/build.sh,
+# which supplies the "example" and "rcal" build contexts, the OPENC3_TAG
+# arg, and tags the result localhost/cosmos-oms:2-quad-basic.
+#
+# Uses the bookworm-slim Rust/Ruby images (same family as the rest of this
+# repo's images, e.g. rcal-ardupilot/Containerfile) instead of Alpine, so the
+# builder and gem-builder stages share cached layers with other local
+# builds. openc3-operator is Debian-based too, so a plain glibc build (no
+# musl target) links and runs there.
+ARG OPENC3_TAG=7.5.1
+
+FROM rust:slim-bookworm AS builder
+WORKDIR /build
+COPY Cargo.toml Cargo.lock build.rs ./
+COPY .cargo ./.cargo
+COPY src ./src
+COPY --from=example A-GRA_subset.xsd gcs-1/CALConfig.toml ./config/
+# rcal 3.0.1 on crates.io doesn't compile against A-GRA (fixed in rcal#130); use the submodule until released
+COPY --from=rcal . /rcal
+RUN printf '\n[patch.crates-io]\nrcal = { path = "/rcal" }\nrcal_macros = { path = "/rcal/rcal_macros" }\n' >> Cargo.toml
+ENV RCAL_XSD_PATH=/build/config/A-GRA_subset.xsd
+ENV RCAL_CALCONFIG_PATH=/build/config/CALConfig.toml
+ENV RCAL_CALCONFIG_SERVICES=oms_ingest
+RUN cargo build --release -p oms_bridge
+
+FROM ruby:3-slim-bookworm AS gem-builder
+WORKDIR /plugin
+COPY cosmos-oms.gemspec plugin.txt ./
+COPY microservices ./microservices
+COPY --from=builder /build/targets/OMS/cmd_tlm/oms_generated.txt ./targets/OMS/cmd_tlm/
+COPY --from=builder /build/target/release/oms_bridge ./microservices/OMS_BRIDGE/bin/oms_bridge
+RUN gem build cosmos-oms.gemspec -o cosmos-oms.gem
+
+FROM docker.io/openc3inc/openc3-operator:${OPENC3_TAG}
+COPY --from=builder /build/target/release/oms_bridge /usr/local/bin/oms_bridge
+COPY --from=gem-builder /plugin/cosmos-oms.gem /cosmos-oms.gem
+COPY plugin_instance.json /plugin_instance.json

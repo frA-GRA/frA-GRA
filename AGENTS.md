@@ -8,6 +8,7 @@ frA-GRA is the hub repo for the frA-GRA Open Mission Systems (OMS) ecosystem. It
  - `rcal/` is a submodule: the OMS CAL in Rust (`rcal`, `rcal_macros` crates).
  - `rcal-ardupilot/` is a submodule: a MAVLink-to-UCI gateway for ArduPilot SITL.
  - `cosmos-oms/` is a submodule: an OpenC3/COSMOS plugin that ingests OMS UCI.
+ - `cosmos-project/` is a submodule (OpenC3/cosmos-project): the upstream COSMOS deployment project (compose files, plugins/ dir, cacert.pem, etc.) that `cosmos-oms` and the examples run on top of. It's not an frA-GRA repo; don't open PRs against it from here.
  - `index.html` is the website. It is one self-contained page.
 
 # Submodule instructions

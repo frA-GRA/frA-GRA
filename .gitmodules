@@ -14,3 +14,9 @@
 	path = specs/a-gra
 	url = https://github.com/open-arsenal/a-gra.git
 	branch = main
+[submodule "cosmos-project"]
+	path = cosmos-project
+	url = https://github.com/OpenC3/cosmos-project.git
+[submodule "ardupilot/ardupilot"]
+	path = ardupilot/ardupilot
+	url = https://github.com/ArduPilot/ardupilot.git

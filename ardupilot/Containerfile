@@ -1,14 +1,18 @@
 # syntax=docker/dockerfile:1.7
-# Pin a release for reproducible builds. Override, for example:
-# docker build --build-arg ARDUPILOT_REF=Copter-4.7.2 -t ardupilot-sitl:4.7.2 .
+# ArduPilot source comes from the ardupilot/ardupilot submodule (pinned via
+# its checked-out commit, not a build arg). To change the version:
+#   cd ardupilot/ardupilot && git fetch --depth 1 origin tag <ref> && git checkout <ref>
+#   git submodule update --init --recursive --depth 1
+# then commit the updated submodule pointer.
 FROM debian:bookworm-slim
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG ARDUPILOT_REF=Copter-4.7.2
 
+# git, python3-dev, and xfonts-base are installed below by
+# install-prereqs-ubuntu.sh itself (as part of its BASE_PKGS/SITL_PKGS and
+# venv setup); listing them here too would just duplicate that work.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    sudo bash ca-certificates git python3 python3-dev python3-pip python3-venv python3-empy iproute2 xfonts-base \
- && rm -rf /var/lib/apt/lists/* \
+    sudo bash ca-certificates python3 python3-pip python3-empy iproute2 \
  && useradd --create-home --uid 10001 -G dialout sitl \
  && sh -c 'echo "sitl    ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers' \
  && mkdir /opt/ardupilot \
@@ -16,10 +20,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /opt/ardupilot
 USER sitl
-RUN git clone --depth 1 --branch "${ARDUPILOT_REF}" --recurse-submodules \
-      https://github.com/ArduPilot/ardupilot.git .
-RUN USER=sitl ./Tools/environment_install/install-prereqs-ubuntu.sh -y \
- && sudo rm -rf /var/lib/apt/lists/*
+
+# Install build prerequisites from just the installer script first, so this
+# (slow) layer is cached until the script itself changes rather than on
+# every change to ArduPilot's source.
+ADD ardupilot/Tools/environment_install/* Tools/environment_install/
+ADD ardupilot/Tools/completion/* Tools/completion/
+ADD ardupilot/Tools/scripts/* Tools/scripts/
+RUN USER=sitl ./Tools/environment_install/install-prereqs-ubuntu.sh -y
+
+COPY --chown=sitl:sitl ardupilot/ ./
 RUN . ~/.profile && ./waf configure --board sitl \
  && ./waf copter plane \
  && ./waf build --target bin/arducopter \

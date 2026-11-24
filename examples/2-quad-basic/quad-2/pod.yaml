@@ -24,7 +24,7 @@ spec:
     - mountPath: /config
       name: rcal-configs-pvc
     - mountPath: /data
-      name: da409c24e67cd313754c1988ab4aabe7e2e9796143c42cd2255e52ebe7f5f87c-pvc
+      name: quad2-sitl-data-pvc
   - env:
     - name: TERM
       value: xterm
@@ -36,10 +36,21 @@ spec:
     volumeMounts:
     - mountPath: /config
       name: rcal-configs-pvc
+  - env:
+    - name: TERM
+      value: xterm
+    - name: RCAL_CALCONFIG_PATH
+      value: /config/2-quad-basic/quad-2/CALConfig.toml
+    image: localhost/rcal_radio_bridge:2-quad-basic
+    name: radio-bridge-quad2
+    tty: true
+    volumeMounts:
+    - mountPath: /config
+      name: rcal-configs-pvc
   volumes:
-  - name: da409c24e67cd313754c1988ab4aabe7e2e9796143c42cd2255e52ebe7f5f87c-pvc
+  - name: quad2-sitl-data-pvc
     persistentVolumeClaim:
-      claimName: da409c24e67cd313754c1988ab4aabe7e2e9796143c42cd2255e52ebe7f5f87c
+      claimName: quad2-sitl-data
   - name: rcal-configs-pvc
     persistentVolumeClaim:
       claimName: rcal-configs

@@ -1,0 +1,396 @@
+# Run with: podman kube play gcs-1/pod.yaml   (run from examples/2-quad-basic)
+# Tear down with: podman kube play gcs-1/pod.yaml --down
+#
+# gcs-1 runs cosmos-oms (an openc3-operator image with the OMS bridge plugin
+# baked in, see ../../cosmos-oms) plus every other container needed to run
+# a full OpenC3 COSMOS instance from the cosmos-project submodule
+# (../../cosmos-project/compose.yaml):
+#   openc3-buckets, openc3-tsdb, openc3-redis, openc3-redis-ephemeral,
+#   openc3-cosmos-cmd-tlm-api, openc3-cosmos-script-runner-api, openc3-traefik,
+#   openc3-cosmos-init, and cosmos-oms itself (replaces openc3-operator so the
+#   OMS_BRIDGE microservice has somewhere to run).
+#
+# All containers share this pod's network namespace, so they reach each other
+# over loopback. hostAliases below map the hostnames cosmos-project's
+# compose.yaml normally resolves over its bridge network (e.g.
+# "openc3-redis") to 127.0.0.1, so unmodified OPENC3_* hostnames still work.
+#
+# Config values come from two places:
+#   - cosmos-env ConfigMap below: everything cosmos-project/.env sets,
+#     applied to every container with envFrom (extras are harmless).
+#   - hostPath volumes pointing at files that ship in the cosmos-project and
+#     cosmos-oms submodules (cacert.pem, traefik.yaml, users.acl, plugins/).
+#     Paths are relative to the directory `podman kube play` is run from
+#     (examples/2-quad-basic), not to this file.
+#
+# radio-bridge-gcs1 (localhost/rcal_radio_bridge:2-quad-basic) restores the
+# cross-ASB connectivity cal_bridge used to provide, now that each system is
+# an isolated pod instead of being multi-homed onto all three networks. It
+# relays this pod's local gcs_1 DDS domain to/from the quads' own
+# radio-bridge-quad1/quad2 instances over a reliable UDP link on the shared
+# radio-net Podman network (see ../run.sh), acting as the hub: quad-to-quad
+# traffic passes through it too, same star topology cal_bridge produced.
+# Without it, cosmos-oms would only see the GCS-1 system's own DDS domain.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cosmos-env
+  labels:
+    app: gcs1
+data:
+  OPENC3_LOCAL_MODE: "1"
+  OPENC3_REDIS_HOSTNAME: openc3-redis
+  OPENC3_REDIS_PORT: "6379"
+  OPENC3_REDIS_USERNAME: openc3
+  OPENC3_REDIS_PASSWORD: openc3password
+  OPENC3_REDIS_EPHEMERAL_HOSTNAME: openc3-redis-ephemeral
+  OPENC3_REDIS_EPHEMERAL_PORT: "6380"
+  OPENC3_SR_REDIS_USERNAME: scriptrunner
+  OPENC3_SR_REDIS_PASSWORD: scriptrunnerpassword
+  OPENC3_SR_BUCKET_USERNAME: scriptrunnerbucket
+  OPENC3_SR_BUCKET_PASSWORD: scriptrunnerbucketpassword
+  ANYCABLE_REDIS_URL: "redis://openc3:openc3password@openc3-redis:6379"
+  OPENC3_BUCKET_URL: "http://openc3-buckets:9000"
+  OPENC3_BUCKET_USERNAME: openc3bucket
+  OPENC3_BUCKET_PASSWORD: openc3bucketpassword
+  OPENC3_CONFIG_BUCKET: config
+  OPENC3_LOGS_BUCKET: logs
+  OPENC3_TOOLS_BUCKET: tools
+  OPENC3_GEMS_VOLUME: /gems
+  OPENC3_PLUGIN_DEFAULT_VOLUME: /plugins/DEFAULT
+  OPENC3_CLOUD: local
+  OPENC3_AWS_ARN_PREFIX: "arn:aws"
+  AWS_REGION: us-east-1
+  OPENC3_TSDB_HOSTNAME: openc3-tsdb
+  OPENC3_TSDB_INGEST_PORT: "9000"
+  OPENC3_TSDB_QUERY_PORT: "8812"
+  OPENC3_TSDB_USERNAME: openc3quest
+  OPENC3_TSDB_PASSWORD: openc3questpassword
+  OPENC3_SERVICE_PASSWORD: openc3service
+  SECRET_KEY_BASE: "bdb4300d46c9d4f116ce3dbbd54cac6b20802d8be1c2333cf5f6f90b1627799ac5d043e8460744077bc0bd6aacdd5c4bf53f499a68303c6752e7f327b874b96a"
+  RUBYGEMS_URL: "https://rubygems.org"
+  PYPI_URL: "https://pypi.org"
+  GEM_HOME: /gems
+  PYTHONUSERBASE: /gems/python_packages
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: gcs1
+  name: gcs1
+spec:
+  hostAliases:
+    - ip: "127.0.0.1"
+      hostnames:
+        - openc3-buckets
+        - openc3-tsdb
+        - openc3-redis
+        - openc3-redis-ephemeral
+        - openc3-traefik
+        - openc3-cosmos-cmd-tlm-api
+        - openc3-cosmos-script-runner-api
+        - openc3-operator
+        - host.docker.internal
+  initContainers:
+    # Drops the cosmos-oms gem and plugin_instance.json into the shared
+    # plugins/ bind mount so openc3-cosmos-init picks it up (mirrors the
+    # install-plugin service in cosmos-oms/docker-compose.yml).
+    - name: install-cosmos-oms-plugin
+      image: localhost/cosmos-oms:2-quad-basic
+      command:
+        - sh
+        - -c
+        - |
+          set -e
+          mkdir -p /plugins/DEFAULT/cosmos-oms
+          cp /cosmos-oms.gem /plugins/DEFAULT/cosmos-oms/cosmos-oms-1.0.6.gem
+          cp /plugin_instance.json /plugins/DEFAULT/cosmos-oms/plugin_instance.json
+      volumeMounts:
+        - mountPath: /plugins
+          name: cosmos-plugins
+  containers:
+    # ── cosmos-project base stack (../../cosmos-project/compose.yaml) ──
+
+    - name: openc3-buckets
+      image: docker.io/openc3inc/openc3-buckets:7.5.1
+      envFrom:
+        - configMapRef:
+            name: cosmos-env
+      env:
+        - name: ROOT_ACCESS_KEY
+          value: openc3bucket
+        - name: ROOT_SECRET_KEY
+          value: openc3bucketpassword
+        - name: SSL_CERT_FILE
+          value: /devel/cacert.pem
+        - name: CURL_CA_BUNDLE
+          value: /devel/cacert.pem
+        - name: REQUESTS_CA_BUNDLE
+          value: /devel/cacert.pem
+        - name: NODE_EXTRA_CA_CERTS
+          value: /devel/cacert.pem
+      volumeMounts:
+        - mountPath: /data
+          name: openc3-object-pvc
+        - mountPath: /devel/cacert.pem
+          name: cosmos-cacert
+
+    - name: openc3-tsdb
+      image: docker.io/openc3inc/openc3-tsdb:7.5.1
+      envFrom:
+        - configMapRef:
+            name: cosmos-env
+      env:
+        - name: QDB_PG_USER
+          value: openc3quest
+        - name: QDB_PG_PASSWORD
+          value: openc3questpassword
+        - name: QDB_HTTP_USER
+          value: openc3quest
+        - name: QDB_HTTP_PASSWORD
+          value: openc3questpassword
+      volumeMounts:
+        - mountPath: /tmp
+          name: openc3-tsdb-tmp-pvc
+        - mountPath: /var/lib/questdb
+          name: openc3-tsdb-pvc
+
+    - name: openc3-redis
+      image: docker.io/openc3inc/openc3-redis:7.5.1
+      envFrom:
+        - configMapRef:
+            name: cosmos-env
+      env:
+        - name: SSL_CERT_FILE
+          value: /devel/cacert.pem
+        - name: CURL_CA_BUNDLE
+          value: /devel/cacert.pem
+        - name: REQUESTS_CA_BUNDLE
+          value: /devel/cacert.pem
+        - name: NODE_EXTRA_CA_CERTS
+          value: /devel/cacert.pem
+      volumeMounts:
+        - mountPath: /data
+          name: openc3-redis-pvc
+        - mountPath: /devel/cacert.pem
+          name: cosmos-cacert
+        - mountPath: /config/users.acl
+          name: cosmos-redis-acl
+
+    - name: openc3-redis-ephemeral
+      image: docker.io/openc3inc/openc3-redis:7.5.1
+      command: ["redis-server", "/config/redis_ephemeral.conf"]
+      envFrom:
+        - configMapRef:
+            name: cosmos-env
+      env:
+        - name: SSL_CERT_FILE
+          value: /devel/cacert.pem
+        - name: CURL_CA_BUNDLE
+          value: /devel/cacert.pem
+        - name: REQUESTS_CA_BUNDLE
+          value: /devel/cacert.pem
+        - name: NODE_EXTRA_CA_CERTS
+          value: /devel/cacert.pem
+      volumeMounts:
+        - mountPath: /data
+          name: openc3-redis-ephemeral-pvc
+        - mountPath: /devel/cacert.pem
+          name: cosmos-cacert
+        - mountPath: /config/users.acl
+          name: cosmos-redis-acl
+
+    - name: openc3-cosmos-cmd-tlm-api
+      image: docker.io/openc3inc/openc3-cosmos-cmd-tlm-api:7.5.1
+      envFrom:
+        - configMapRef:
+            name: cosmos-env
+      env:
+        - name: RAILS_ENV
+          value: production
+        - name: WEB_CONCURRENCY
+          value: "8"
+      volumeMounts:
+        - mountPath: /tmp
+          name: openc3-cmd-tlm-api-tmp-pvc
+        - mountPath: /gems
+          name: openc3-gems-pvc
+        - mountPath: /plugins
+          name: cosmos-plugins
+        - mountPath: /devel/cacert.pem
+          name: cosmos-cacert
+
+    - name: openc3-cosmos-script-runner-api
+      image: docker.io/openc3inc/openc3-cosmos-script-runner-api:7.5.1
+      envFrom:
+        - configMapRef:
+            name: cosmos-env
+      env:
+        - name: RAILS_ENV
+          value: production
+        - name: WEB_CONCURRENCY
+          value: "2"
+        - name: OPENC3_USE_UV
+          value: "true"
+      volumeMounts:
+        - mountPath: /tmp
+          name: openc3-script-runner-api-tmp-pvc
+        - mountPath: /gems
+          name: openc3-gems-pvc
+          readOnly: true
+        - mountPath: /plugins
+          name: cosmos-plugins
+        - mountPath: /devel/cacert.pem
+          name: cosmos-cacert
+
+    - name: openc3-traefik
+      image: docker.io/openc3inc/openc3-traefik:7.5.1
+      envFrom:
+        - configMapRef:
+            name: cosmos-env
+      env:
+        - name: SSL_CERT_FILE
+          value: /devel/cacert.pem
+        - name: CURL_CA_BUNDLE
+          value: /devel/cacert.pem
+        - name: REQUESTS_CA_BUNDLE
+          value: /devel/cacert.pem
+        - name: NODE_EXTRA_CA_CERTS
+          value: /devel/cacert.pem
+      ports:
+        - containerPort: 2900
+          hostPort: 2900
+        - containerPort: 2943
+          hostPort: 2943
+      volumeMounts:
+        - mountPath: /devel/cacert.pem
+          name: cosmos-cacert
+        - mountPath: /etc/traefik/traefik.yaml
+          name: cosmos-traefik-yaml
+
+    - name: openc3-cosmos-init
+      image: docker.io/openc3inc/openc3-cosmos-init:7.5.1
+      envFrom:
+        - configMapRef:
+            name: cosmos-env
+      env:
+        # Mirrors cosmos-oms/docker-compose.yml: suppress the Demo plugin so
+        # init only installs cosmos-oms.
+        - name: OPENC3_DEMO
+          value: ""
+        - name: OPENC3_USE_UV
+          value: "true"
+      volumeMounts:
+        - mountPath: /tmp
+          name: openc3-init-tmp-pvc
+        - mountPath: /gems
+          name: openc3-gems-pvc
+        - mountPath: /plugins
+          name: cosmos-plugins
+        - mountPath: /devel/cacert.pem
+          name: cosmos-cacert
+
+    # ── GCS-1 OMS bridge: cosmos-oms replaces openc3-operator ──
+    # (mirrors the openc3-operator override in cosmos-oms/docker-compose.yml)
+
+    - name: cosmos-oms
+      image: localhost/cosmos-oms:2-quad-basic
+      tty: true
+      envFrom:
+        - configMapRef:
+            name: cosmos-env
+      env:
+        - name: TERM
+          value: xterm
+        - name: OPENC3_USE_UV
+          value: "true"
+        # Read by the OMS_BRIDGE microservice's oms_bridge binary directly;
+        # the plugin's own ENV line for RCAL_CALCONFIG_PATH (plugin.txt)
+        # points at /config/CALConfig.toml, which this mounts.
+        - name: RCAL_CALCONFIG_PATH
+          value: /config/2-quad-basic/gcs-1/CALConfig.toml
+      volumeMounts:
+        - mountPath: /tmp
+          name: openc3-operator-tmp-pvc
+        - mountPath: /gems
+          name: openc3-gems-pvc
+          readOnly: true
+        - mountPath: /plugins
+          name: cosmos-plugins
+        - mountPath: /devel/cacert.pem
+          name: cosmos-cacert
+        - mountPath: /config
+          name: rcal-configs-pvc
+
+    # ── radio bridge: restores cross-ASB connectivity over radio-net ──
+
+    - name: radio-bridge-gcs1
+      image: localhost/rcal_radio_bridge:2-quad-basic
+      tty: true
+      env:
+        - name: TERM
+          value: xterm
+        - name: RCAL_CALCONFIG_PATH
+          value: /config/2-quad-basic/gcs-1/CALConfig.toml
+      volumeMounts:
+        - mountPath: /config
+          name: rcal-configs-pvc
+
+  volumes:
+    # Bind mounts into the cosmos-project submodule checkout. Relative to
+    # examples/2-quad-basic (../../ == repo root), so run `podman kube play
+    # gcs-1/pod.yaml` from there, not from this directory.
+    - name: cosmos-cacert
+      hostPath:
+        path: ../../cosmos-project/cacert.pem
+        type: File
+    - name: cosmos-redis-acl
+      hostPath:
+        path: ../../cosmos-project/openc3-redis/users.acl
+        type: File
+    - name: cosmos-traefik-yaml
+      hostPath:
+        path: ../../cosmos-project/openc3-traefik/traefik.yaml
+        type: File
+    - name: cosmos-plugins
+      hostPath:
+        path: ../../cosmos-project/plugins
+        type: Directory
+
+    # Shared with the quad pods: /config/2-quad-basic/gcs-1/CALConfig.toml.
+    - name: rcal-configs-pvc
+      persistentVolumeClaim:
+        claimName: rcal-configs
+
+    # COSMOS data volumes (podman creates these named volumes on first play).
+    - name: openc3-object-pvc
+      persistentVolumeClaim:
+        claimName: openc3-object-v
+    - name: openc3-tsdb-tmp-pvc
+      persistentVolumeClaim:
+        claimName: openc3-tsdb-tmp-v
+    - name: openc3-tsdb-pvc
+      persistentVolumeClaim:
+        claimName: openc3-tsdb-v
+    - name: openc3-redis-pvc
+      persistentVolumeClaim:
+        claimName: openc3-redis-v
+    - name: openc3-redis-ephemeral-pvc
+      persistentVolumeClaim:
+        claimName: openc3-redis-ephemeral-v
+    - name: openc3-gems-pvc
+      persistentVolumeClaim:
+        claimName: openc3-gems-v
+    - name: openc3-cmd-tlm-api-tmp-pvc
+      persistentVolumeClaim:
+        claimName: openc3-cmd-tlm-api-tmp-v
+    - name: openc3-script-runner-api-tmp-pvc
+      persistentVolumeClaim:
+        claimName: openc3-script-runner-api-tmp-v
+    - name: openc3-operator-tmp-pvc
+      persistentVolumeClaim:
+        claimName: openc3-operator-tmp-v
+    - name: openc3-init-tmp-pvc
+      persistentVolumeClaim:
+        claimName: openc3-init-tmp-v

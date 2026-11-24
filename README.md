@@ -42,7 +42,8 @@ frA-GRA/
 ├── examples/           Docker Compose example systems
 ├── rcal/               submodule — OMS CAL in Rust
 ├── rcal-ardupilot/     submodule — MAVLink/UCI gateway for ArduPilot SITL
-└── cosmos-oms/         submodule — OpenC3/COSMOS OMS plugin
+├── cosmos-oms/         submodule — OpenC3/COSMOS OMS plugin
+└── cosmos-project/     submodule — OpenC3/COSMOS deployment (compose/k8s files, no source)
 ```
 
 ## Submodules
@@ -52,6 +53,7 @@ frA-GRA/
 | `rcal` | OMS CAL implementation in Rust | [frA-GRA/rcal](https://github.com/frA-GRA/rcal) |
 | `rcal-ardupilot` | MAVLink-to-UCI gateway | [frA-GRA/rcal-ardupilot](https://github.com/frA-GRA/rcal-ardupilot) |
 | `cosmos-oms` | OpenC3/COSMOS OMS plugin | [frA-GRA/cosmos-oms](https://github.com/frA-GRA/cosmos-oms) |
+| `cosmos-project` | OpenC3/COSMOS deployment project | [OpenC3/cosmos-project](https://github.com/OpenC3/cosmos-project) |
 | `specs/a-gra` | A-GRA interface specifications | [open-arsenal/a-gra](https://github.com/open-arsenal/a-gra) |
 
 All submodules track the `main` branch.
